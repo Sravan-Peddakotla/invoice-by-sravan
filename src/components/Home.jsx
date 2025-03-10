@@ -1,8 +1,13 @@
+import { useState } from 'react'
 import '../App.css'
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
 const Home = () => {
+    const [state, setState] = useState({
+        taxPer: 13,
+        iDealMarCom: 5,
+    })
     const productDetails = [
         { "store": "Yummy Punjabi Flavours", "orderID": "9239d580-deee-4c09-af7f-21e7e102a893", "product": "Chana Poori", "quantity": "2", "price": "9.99", "discount_price": "4.99", "order_date": "2025-03-06 19:03:23.007685+00:00", "item_total": "9.98", "tax": "1.2974", "commission": "0.06487000000000001" },
         { "store": "Yummy Punjabi Flavours", "orderID": "6a42e29e-4ab4-48ab-a0af-f5a810258f0e", "product": "Dal Makhni and Tandoori Roti", "quantity": "2", "price": "13.99", "discount_price": "5.99", "order_date": "2025-03-06 11:20:54.279623+00:00", "item_total": "11.98", "tax": "1.5574000000000001", "commission": "0.07787000000000001" },
@@ -31,95 +36,123 @@ const Home = () => {
         store: item.store,
         tax: item.tax
     }))
+    const { taxPer, iDealMarCom } = state;
     let subTotal = 0
     for (let i of updatedData) {
         subTotal += parseFloat(i.price) * parseInt(i.quantity)
     }
-    let payoutAmount = parseFloat(subTotal) + ((parseFloat(subTotal) * 13) / 100)
-    let payAmountWithCom = parseFloat(payoutAmount) + ((parseFloat(payoutAmount) * 5) / 100);
+    let taxAmount = ((parseFloat(subTotal) * taxPer) / 100)
+    let taxAmountFixed = taxAmount.toFixed(2)
+    let iDealMartCommAmount = ((parseFloat(subTotal) * iDealMarCom) / 100)
+    let fixedIdealMartComAmt = iDealMartCommAmount.toFixed(2)
+    let payAmountWithCom = parseFloat(subTotal) + parseFloat(taxAmountFixed) + parseFloat(fixedIdealMartComAmt)
     let fixedPayAmount = payAmountWithCom.toFixed(2);
+
     const handleDownloadPDF = () => {
         const element = document.getElementById("pdf-content");
         html2canvas(element).then((canvas) => {
             const imgData = canvas.toDataURL("image/png");
             const pdf = new jsPDF("p", "mm", "a4");
             pdf.addImage(imgData, "PNG", 16, 16, 190, 0);
+            pdf.setFontSize(20);
+            pdf.setFontSize(24);
+            // pdf.text("Hello, PDF!", 10, 20);
             pdf.setFontSize(16);
             pdf.save("Invoice.pdf");
-            pdf.setFontSize(24);
-            pdf.text("Hello, PDF!", 10, 20);
-            pdf.setFontSize(16);
-            pdf.text("This content will be saved as a PDF.", 10, 40);
         });
     };
+  
+    
+    const iDealMarComChange = (event) => {
+        setState((prev) => ({ ...prev, iDealMarCom: event.target.value }))
+    }
+    const taxPerChange = (event) => {
+        setState((prev) => ({ ...prev, taxPer: event.target.value }))
+    }
     return (
         <div>
+            <div className="input-fields">
+                <label className="label-el" htmlFor='taxPer'><b>Tax Percentage : </b> </label>
+                <input type="number" id="taxPer" placeholder='Only Numbers Allowed' value={taxPer} onChange={taxPerChange} />
+                <label className="label-el" htmlFor='comPer'><b>iDealMart Commission Percentage : </b></label>
+                <input type="number" id="comPer" placeholder='Only Numbers Allowed' value={iDealMarCom} onChange={iDealMarComChange} />
+            </div>
             <div id="pdf-content" >
-                <div className='hr-line'>
-                    <img src="./iDealMartLogoNew.png" alt="logo" />
-                    <p>88 Colgate Ave</p>
-                    <p>Toronto, ON M4M 3L1</p>
-                    <h1 className="invoice-header">Invoice</h1>
-                    <h4 className="semi-header">Submitted On 09/03/2025</h4>
-                    <div className='table-margin'>
-                    <table className='table  small-table'>
-                        <thead>
-                            <tr>
-                                <th>
-                                    Invoice For
-                                </th>
-                                <th>
-                                    Payable to
-                                </th>
-                                <th>
-                                    Invoice #
-                                </th>
-                                <th>
-                                    Due Date
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Wow Eats</td>
-                                <td href="mailto:woweats.ca@gmail.com">woweats.ca@gmail.com</td>
-                                <td>WOW20250302</td>
-                                <td>10/03/2023</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div>
+                    <div className='hr-line'>
+                        <img src="./iDealMartLogoNew.png" alt="logo" />
+                        <p>88 Colgate Ave</p>
+                        <p>Toronto, ON M4M 3L1</p>
+                        <h1 className="invoice-header">Invoice</h1>
+                        <h4 className="semi-header">Submitted On 09/03/2025</h4>
                     </div>
-                    <hr />
-                    <table className="table-margin" >
-                        <thead>
-                            <tr>
-                                <th className="table-header">#</th>
-                                <th className="table-header">Date</th>
-                                <th className="table-header">Order #</th>
-                                <th className="table-header">Product</th>
-                                <th className="table-header">Qty</th>
-                                <th className="table-header">Unit Price</th>
-                                <th className="table-header">Total Price</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {updatedData.map((item, id) =>
-                                <tr className='table-bg' key={id}>
-                                    <td>{id + 1}</td>
-                                    <td>{new Date(item.orderDate).toLocaleString("EN-gb")}</td>
-                                    <td>{item.orderID}</td>
-                                    <td>{item.product}</td>
-                                    <td>{item.quantity}</td>
-                                    <td>{item.price}</td>
-                                    <td>{item.price * item.quantity}</td>
+                    <div className='width-table'>
+                        <div className='table-margin'>
+                            <table className='table  small-table'>
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            Invoice For
+                                        </th>
+                                        <th>
+                                            Payable to
+                                        </th>
+                                        <th>
+                                            Invoice #
+                                        </th>
+                                        <th>
+                                            Due Date
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Wow Eats</td>
+                                        <td href="mailto:woweats.ca@gmail.com">woweats.ca@gmail.com</td>
+                                        <td>WOW20250302</td>
+                                        <td>10/03/2023</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <hr />
+                        <table className="table-margin" >
+                            <thead>
+                                <tr>
+                                    <th className="table-header">Date</th>
+                                    <th className="table-header">Order #</th>
+                                    <th className="table-header">Name</th>
+                                    <th className="table-header">Qty</th>
+                                    <th className="table-header">Unit price</th>
+                                    <th className="table-header">Total price</th>
                                 </tr>
-                            )}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {updatedData.map((item, id) =>
+                                    <tr className='table-bg' key={id}>
+                                        <td>{new Date(item.orderDate).toLocaleString('en-CA', {
+                                            year: 'numeric',
+                                            month: '2-digit',
+                                            day: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            second: '2-digit',
+                                            hour12: false
+                                        }).replace(',', '')}</td>
+                                        <td>{item.orderID}</td>
+                                        <td>{item.product}</td>
+                                        <td>{item.quantity}</td>
+                                        <td>{item.price}</td>
+                                        <td>{item.price * item.quantity}</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                     <div className="footer-cont">
-                        <h5>Sub Total : ${subTotal}</h5>
-                        <h5>Tax : 13%</h5>
-                        <h5>iDeal Mart Commission : 5%</h5>
+                        <h5>Subtotal : ${subTotal}</h5>
+                        <h5>Tax : ${taxAmountFixed}</h5>
+                        <h5>iDealMart Commission : ${fixedIdealMartComAmt}</h5>
                         <h4 className="payout-header">Payout Amount : ${fixedPayAmount}</h4>
                     </div>
                 </div>
