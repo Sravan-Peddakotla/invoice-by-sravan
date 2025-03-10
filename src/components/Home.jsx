@@ -36,6 +36,7 @@ const Home = () => {
         store: item.store,
         tax: item.tax
     }))
+    updatedData.sort((a, b) => new Date(a.orderDate) - new Date(b.orderDate))
     const { taxPer, iDealMarCom } = state;
     let subTotal = 0
     for (let i of updatedData) {
